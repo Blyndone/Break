@@ -1,0 +1,38 @@
+{
+  "title": "Break",
+  "id": "break",
+  "version": "#{VERSION}#",
+  "compatibility": {
+    "minimum": "13.302",
+    "verified": "13.351",
+    "maximum": "13.999"
+  },
+  "relationships": {
+    "requires": [
+      {
+        "id": "socketlib",
+        "type": "module",
+        "compatibility": {}
+      }
+    ]
+  },
+  "esmodules": [
+    "/scripts/module.js"
+  ],
+  "styles": [
+    "/styles/styles.css"
+  ],
+  "socket": true,
+  "url": "#{URL}#",
+  "manifest": "#{MANIFEST}#",
+  "download": "#{DOWNLOAD}#",
+  "license": "LICENSE",
+  "readme": "README.md",
+  "media": [
+    {
+      "type": "icon",
+      "loop": false,
+      "flags": {}
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+:root {
+  --brk-overlay-bg: #000000cc;
+  --brk-text-color: #f1f1f1;
+  --brk-accent-color: #c9593f;
+  --brk-accent-color-light: #e46f55;
+}
+
+#break {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--brk-overlay-bg);
+  color: var(--brk-text-color);
+  pointer-events: all;
+}
+
+.break-prompt {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  text-align: center;
+}
+
+.break-prompt-text {
+  font-size: 3rem;
+  font-family: serif;
+  text-shadow: 0 0 10px #000;
+}
+
+.break-buzzer {
+  width: 12rem;
+  height: 12rem;
+  border-radius: 50%;
+  border: 6px solid var(--brk-accent-color-light);
+  background: var(--brk-accent-color);
+  color: var(--brk-text-color);
+  font-size: 2rem;
+  font-family: serif;
+  cursor: pointer;
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
+  box-shadow: 0 0 20px #000;
+}
+.break-buzzer:hover {
+  box-shadow: 0 0 30px var(--brk-accent-color-light);
+}
+.break-buzzer:active {
+  transform: scale(0.95);
+}
+
+.break-prompt-status {
+  font-size: 2rem;
+  font-family: serif;
+  opacity: 0.7;
+}
+
+/*# sourceMappingURL=styles.css.map */

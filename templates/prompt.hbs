@@ -1,0 +1,8 @@
+<div class="break-prompt {{#if buzzed}}buzzed{{/if}}">
+  <div class="break-prompt-text">{{prompt.text}}</div>
+  {{#unless buzzed}}
+    <button type="button" class="break-buzzer" data-action="buzz">Buzz</button>
+  {{else}}
+    <div class="break-prompt-status">Buzzed</div>
+  {{/unless}}
+</div>
