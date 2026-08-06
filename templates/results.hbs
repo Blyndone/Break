@@ -1,29 +1,36 @@
 <div class="break-results">
-  {{#if prompt.text}}
-    <div class="break-results-prompt">{{prompt.text}}</div>
-  {{/if}}
+  <div class="break-results-prompt">{{headline}}</div>
 
   {{#if limit}}
-    <div class="break-results-limit">Keeping the fastest {{limit}}.</div>
+    <div class="break-results-note">Keeping the fastest {{limit}}.</div>
   {{/if}}
 
   {{#if order.length}}
     <ol class="break-results-order">
       {{#each order}}
         <li class="{{#if this.cut}}cut{{/if}}">
+          <span class="break-results-rank">{{this.rank}}</span>
+          <img class="break-results-portrait" src="{{this.img}}" alt="{{this.name}}" />
           <span class="break-results-name">{{this.name}}</span>
           <span class="break-results-elapsed">{{this.elapsed}} ms</span>
         </li>
       {{/each}}
     </ol>
   {{else}}
-    <div class="break-results-empty">No responses yet.</div>
+    <div class="break-results-note">No responses yet.</div>
   {{/if}}
 
   {{#if pending.length}}
-    <div class="break-results-pending">
-      Waiting on: {{#each pending}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-    </div>
+    <ol class="break-results-order pending">
+      {{#each pending}}
+        <li>
+          <span class="break-results-rank">&ndash;</span>
+          <img class="break-results-portrait" src="{{this.img}}" alt="{{this.name}}" />
+          <span class="break-results-name">{{this.name}}</span>
+          <span class="break-results-elapsed">&hellip;</span>
+        </li>
+      {{/each}}
+    </ol>
   {{/if}}
 
   {{#if active}}

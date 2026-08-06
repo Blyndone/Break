@@ -67,17 +67,19 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   async _prepareContext(options) {
+    // Re-sorted on every buzz, so the window reads as a live leaderboard.
     const order = this.#standings().map((entry) => ({
       ...entry,
-      name: participantFor(entry.userId).name,
+      ...participantFor(entry.userId),
     }))
 
     const pending = this.expected
       .filter((userId) => !this.responses.has(userId))
-      .map((userId) => participantFor(userId).name)
+      .map((userId) => participantFor(userId))
 
     return {
       prompt: this.prompt,
+      headline: headlineFor(this.prompt),
       order,
       pending,
       limit: this.limit,
