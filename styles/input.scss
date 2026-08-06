@@ -265,3 +265,77 @@
   opacity: 0.45;
   text-decoration: line-through;
 }
+
+// Chat card posted when a round ends
+.break-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.break-chat-headline {
+  font-family: serif;
+  font-variant: small-caps;
+  font-size: 1.3rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #0000004d;
+  padding-bottom: 0.25rem;
+}
+
+.break-chat-order {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid #00000021;
+    }
+
+    &.cut {
+      opacity: 0.5;
+    }
+  }
+}
+
+.break-chat-rank {
+  flex: 0 0 1.4rem;
+  text-align: center;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.break-chat-portrait {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border: 1px solid #0000005e;
+  border-radius: 3px;
+}
+
+.break-chat-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.break-chat-time {
+  flex: 0 0 auto;
+  opacity: 0.7;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.break-chat-note {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}

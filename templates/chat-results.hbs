@@ -1,0 +1,28 @@
+<div class="break-chat">
+  <div class="break-chat-headline">{{headline}}</div>
+
+  {{#if limit}}
+    <div class="break-chat-note">Keeping the fastest {{limit}}.</div>
+  {{/if}}
+
+  {{#if order.length}}
+    <ol class="break-chat-order">
+      {{#each order}}
+        <li class="{{#if this.cut}}cut{{/if}}">
+          <span class="break-chat-rank">{{this.rank}}</span>
+          <img class="break-chat-portrait" src="{{this.img}}" alt="{{this.name}}" />
+          <span class="break-chat-name">{{this.name}}</span>
+          <span class="break-chat-time">{{this.elapsed}} ms</span>
+        </li>
+      {{/each}}
+    </ol>
+  {{else}}
+    <div class="break-chat-note">Nobody responded.</div>
+  {{/if}}
+
+  {{#if pending.length}}
+    <div class="break-chat-note">
+      No response: {{#each pending}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+    </div>
+  {{/if}}
+</div>

@@ -8,7 +8,11 @@ let breakResults
 let socket
 
 export async function preloadHandlebarsTemplates() {
-  const partials = ['modules/break/templates/prompt.hbs', 'modules/break/templates/results.hbs']
+  const partials = [
+    'modules/break/templates/prompt.hbs',
+    'modules/break/templates/results.hbs',
+    'modules/break/templates/chat-results.hbs',
+  ]
 
   const paths = {}
   for (const path of partials) {

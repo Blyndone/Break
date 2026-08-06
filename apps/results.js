@@ -1,3 +1,5 @@
+import { headlineFor, participantFor } from './roster.js'
+
 const { ApplicationV2 } = foundry.applications.api
 const { api } = foundry.applications
 
@@ -67,12 +69,12 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
   async _prepareContext(options) {
     const order = this.#standings().map((entry) => ({
       ...entry,
-      name: game.users.get(entry.userId)?.name ?? entry.userId,
+      name: participantFor(entry.userId).name,
     }))
 
     const pending = this.expected
       .filter((userId) => !this.responses.has(userId))
-      .map((userId) => game.users.get(userId)?.name ?? userId)
+      .map((userId) => participantFor(userId).name)
 
     return {
       prompt: this.prompt,
@@ -136,14 +138,49 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     })
   }
 
-  /** Close every client's overlay and end the round. */
+  /**
+   * End the round: drop every client's overlay, post the results to chat, then
+   * close this window.
+   */
   async dismiss() {
-    const promptId = this.prompt?.id
-    if (!promptId) return
+    const prompt = this.prompt
+    if (!prompt) return
 
+    // Clear first so a buzz that lands mid teardown is rejected.
     this.prompt = null
-    await this.socket.executeForOthers('dismissPrompt', promptId)
-    await this.render({ parts: ['results'] })
+
+    await this.socket.executeForOthers('dismissPrompt', prompt.id)
+    await this.#postResults(prompt)
+    await this.close()
+  }
+
+  /**
+   * Post the final order to chat, visible to everyone.
+   * @param {object} prompt  The round that just ended.
+   */
+  async #postResults(prompt) {
+    const order = this.#standings().map((entry) => ({
+      ...entry,
+      ...participantFor(entry.userId),
+    }))
+
+    const pending = this.expected
+      .filter((userId) => !this.responses.has(userId))
+      .map((userId) => participantFor(userId).name)
+
+    const content = await foundry.applications.handlebars.renderTemplate(
+      'modules/break/templates/chat-results.hbs',
+      { headline: headlineFor(prompt), limit: this.limit, order, pending },
+    )
+
+    // A plain alias rather than getSpeaker(): that helper ignores a user and
+    // falls back to whatever token the GM happens to have selected, which
+    // would attribute the results to a random actor.
+    await ChatMessage.implementation.create({
+      content,
+      speaker: { alias: 'Break' },
+      flags: { break: { promptId: prompt.id } },
+    })
   }
 
   /** @this {BreakResults} */

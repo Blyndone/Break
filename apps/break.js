@@ -1,3 +1,5 @@
+import { headlineFor, participantFor } from './roster.js'
+
 const { ApplicationV2 } = foundry.applications.api
 const { api } = foundry.applications
 
@@ -53,7 +55,6 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     const statuses = new Map(this.statuses.map((status) => [status.userId, status]))
 
     const participants = (this.prompt?.participants ?? []).map((userId) => {
-      const user = game.users.get(userId)
       const isSelf = userId === game.user.id
       const status = statuses.get(userId)
 
@@ -64,9 +65,8 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
         isSelf && this.elapsed != null ? Math.round(this.elapsed) : (status?.elapsed ?? null)
 
       return {
+        ...participantFor(userId),
         isSelf,
-        name: user?.name ?? userId,
-        img: user?.character?.img ?? user?.avatar ?? 'icons/svg/mystery-man.svg',
         buzzed,
         elapsed,
         rank: status?.rank ?? null,
@@ -79,9 +79,7 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     return {
       prompt: this.prompt,
       limit,
-      // A supplied message takes the headline; otherwise it announces the call
-      // itself, with the cap when there is one.
-      headline: this.prompt?.text?.trim() || `BREAK${limit ? ` ${limit}` : ''}`,
+      headline: headlineFor(this.prompt),
       participants,
     }
   }
