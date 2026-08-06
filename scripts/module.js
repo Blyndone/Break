@@ -46,8 +46,20 @@ Hooks.on('chatMessage', (chatLog, message, chatData) => {
     return false
   }
 
-  const text = match[1]?.trim()
-  breakResults?.start(text ? { text } : {})
+  // A leading integer is the cap on accepted responses; everything after it
+  // is the prompt text. `/break 3 zombies` caps at 3, `/break zombies` does not.
+  const args = match[1]?.trim() ?? ''
+  const capped = args.match(/^(\d+)(?:\s+([\s\S]+))?$/)
+
+  const limit = capped ? Number(capped[1]) : null
+  const text = (capped ? capped[2] : args)?.trim()
+
+  if (limit != null && limit < 1) {
+    ui.notifications.warn('Break | The response limit must be at least 1.')
+    return false
+  }
+
+  breakResults?.start({ ...(text ? { text } : {}), limit })
   return false
 })
 
@@ -57,6 +69,7 @@ Hooks.once('socketlib.ready', () => {
 
   socket.register('showPrompt', (prompt) => breakUI?.show(prompt))
   socket.register('dismissPrompt', (promptId) => breakUI?.dismiss(promptId))
+  socket.register('syncStatus', (update) => breakUI?.sync(update))
   socket.register('buzz', (response) => breakResults?.record(response))
 })
 

@@ -1,12 +1,16 @@
 <div class="break-results">
-  {{#if prompt}}
+  {{#if prompt.text}}
     <div class="break-results-prompt">{{prompt.text}}</div>
+  {{/if}}
+
+  {{#if limit}}
+    <div class="break-results-limit">Keeping the fastest {{limit}}.</div>
   {{/if}}
 
   {{#if order.length}}
     <ol class="break-results-order">
       {{#each order}}
-        <li>
+        <li class="{{#if this.cut}}cut{{/if}}">
           <span class="break-results-name">{{this.name}}</span>
           <span class="break-results-elapsed">{{this.elapsed}} ms</span>
         </li>

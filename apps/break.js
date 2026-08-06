@@ -19,6 +19,8 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.shownAt = null
     this.buzzed = false
     this.elapsed = null
+    /** @type {Array<{userId: string, rank: number, elapsed: number, cut: boolean}>} */
+    this.statuses = []
   }
 
   /** Arrow function so the listener stays bound and removable. */
@@ -48,24 +50,52 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async _prepareContext(options) {
+    const statuses = new Map(this.statuses.map((status) => [status.userId, status]))
+
+    const participants = (this.prompt?.participants ?? []).map((userId) => {
+      const user = game.users.get(userId)
+      const isSelf = userId === game.user.id
+      const status = statuses.get(userId)
+
+      // Trust local state for our own tile so the player sees their time
+      // immediately, before the GM's broadcast comes back.
+      const buzzed = isSelf ? this.buzzed : status != null
+      const elapsed =
+        isSelf && this.elapsed != null ? Math.round(this.elapsed) : (status?.elapsed ?? null)
+
+      return {
+        isSelf,
+        name: user?.name ?? userId,
+        img: user?.character?.img ?? user?.avatar ?? 'icons/svg/mystery-man.svg',
+        buzzed,
+        elapsed,
+        rank: status?.rank ?? null,
+        cut: status?.cut ?? false,
+      }
+    })
+
     return {
       prompt: this.prompt,
-      buzzed: this.buzzed,
-      elapsed: this.elapsed == null ? null : Math.round(this.elapsed),
+      limit: this.prompt?.limit ?? null,
+      participants,
     }
   }
 
   /**
    * Display a prompt and start this client's clock.
    * @param {object} prompt
-   * @param {string} prompt.id    Identifies this round of buzzing.
-   * @param {string} prompt.text  Message shown to the player.
+   * @param {string} prompt.id             Identifies this round of buzzing.
+   * @param {string} prompt.text           Message shown above the roster.
+   * @param {string} prompt.gmId           GM to report back to.
+   * @param {number|null} prompt.limit     Cap on accepted responses, if any.
+   * @param {string[]} prompt.participants Everyone prompted, in roster order.
    */
   async show(prompt) {
     this.prompt = prompt
     this.buzzed = false
     this.elapsed = null
     this.shownAt = null
+    this.statuses = []
 
     await this.render({ force: true })
 
@@ -75,6 +105,19 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     })
 
     this.shownAt = performance.now()
+  }
+
+  /**
+   * Apply the GM's view of who has buzzed so far.
+   * @param {object} update
+   * @param {string} update.promptId
+   * @param {Array} update.statuses
+   */
+  async sync({ promptId, statuses }) {
+    if (this.prompt?.id !== promptId) return
+
+    this.statuses = statuses
+    await this.render({ parts: ['prompt'] })
   }
 
   /**
@@ -89,14 +132,12 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.shownAt = null
     this.buzzed = false
     this.elapsed = null
+    this.statuses = []
 
     if (this.rendered) await this.close()
   }
 
-  /**
-   * Record this client's reaction time and report it to the GM.
-   * @this {Break}
-   */
+  /** @this {Break} */
   static async onBuzz(event, target) {
     await this.buzz()
   }
@@ -109,8 +150,10 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.buzzed = true
     this.elapsed = performance.now() - this.shownAt
 
-    // Report to the GM that opened this prompt. Render regardless so the
-    // player still sees their own time if that GM has dropped.
+    await this.render({ parts: ['prompt'] })
+
+    // Report to the GM that opened this prompt. The render above already ran,
+    // so the player sees their own time even if that GM has dropped.
     try {
       await this.socket.executeAsUser('buzz', this.prompt.gmId, {
         promptId: this.prompt.id,
@@ -120,8 +163,6 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     } catch (error) {
       console.error('Break | Failed to report buzz:', error)
     }
-
-    await this.render({ parts: ['prompt'] })
   }
 
   _onRender(context, options) {

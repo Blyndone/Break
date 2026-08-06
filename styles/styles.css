@@ -1,8 +1,13 @@
 :root {
-  --brk-overlay-bg: #000000cc;
+  --brk-backdrop: #000000b3;
   --brk-text-color: #f1f1f1;
+  --brk-band-color: #8c1c2b;
+  --brk-band-color-light: #b8283c;
+  --brk-badge-bg: #191919;
+  --brk-badge-border: #d8cfc0;
   --brk-accent-color: #c9593f;
   --brk-accent-color-light: #e46f55;
+  --brk-portrait-width: 190px;
 }
 
 #break {
@@ -12,50 +17,140 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: var(--brk-overlay-bg);
+  background: var(--brk-backdrop);
   color: var(--brk-text-color);
-  pointer-events: all;
 }
 
-.break-prompt {
+.break-band {
+  width: 100%;
+  padding: 2rem 1rem 3.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 2rem;
-  text-align: center;
+  gap: 1.25rem;
+  background: linear-gradient(180deg, var(--brk-band-color) 0%, var(--brk-band-color-light) 50%, var(--brk-band-color) 100%);
+  border-top: 2px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6509803922);
 }
 
 .break-prompt-text {
-  font-size: 3rem;
   font-family: serif;
-  text-shadow: 0 0 10px #000;
+  font-size: 2rem;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-shadow: 0 2px 6px #000;
+}
+
+.break-roster {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.break-player {
+  position: relative;
+  width: var(--brk-portrait-width);
+  aspect-ratio: 3/4;
+  margin-bottom: 2.25rem;
+  transition: transform 0.15s ease-out;
+}
+.break-player.self {
+  transform: translateY(-0.5rem);
+}
+.break-player.cut {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+
+.break-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6509803922);
+}
+
+.break-player-name {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 0.4rem 0.5rem;
+  font-family: serif;
+  font-variant: small-caps;
+  font-size: 0.95rem;
+  line-height: 1.15;
+  text-shadow: 0 2px 4px #000;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+}
+
+.break-player:hover .break-player-name,
+.break-player.self .break-player-name {
+  opacity: 1;
+}
+
+.break-badge {
+  position: absolute;
+  bottom: -1.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 3.5rem;
+  min-width: 3.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 3px solid var(--brk-badge-border);
+  border-radius: 999px;
+  background: var(--brk-badge-bg);
+  color: var(--brk-text-color);
+  font-family: serif;
+  font-size: 1.5rem;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6509803922);
+}
+
+.break-badge.waiting {
+  opacity: 0.6;
+  font-size: 1.75rem;
 }
 
 .break-buzzer {
-  width: 12rem;
-  height: 12rem;
-  border-radius: 50%;
-  border: 6px solid var(--brk-accent-color-light);
-  background: var(--brk-accent-color);
-  color: var(--brk-text-color);
-  font-size: 2rem;
-  font-family: serif;
+  padding: 0 1.5rem;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
   cursor: pointer;
+  background: var(--brk-accent-color);
+  border-color: var(--brk-accent-color-light);
   transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
-  box-shadow: 0 0 20px #000;
 }
 .break-buzzer:hover {
-  box-shadow: 0 0 30px var(--brk-accent-color-light);
+  background: var(--brk-accent-color-light);
+  box-shadow: 0 0 18px var(--brk-accent-color-light);
 }
 .break-buzzer:active {
-  transform: scale(0.95);
+  transform: translateX(-50%) scale(0.94);
 }
 
-.break-prompt-status {
-  font-size: 2rem;
-  font-family: serif;
-  opacity: 0.7;
+.break-elapsed {
+  position: absolute;
+  bottom: -3.4rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 4px #000;
+  opacity: 0.85;
 }
 
 .break-results {
@@ -88,9 +183,15 @@
 }
 
 .break-results-empty,
-.break-results-pending {
+.break-results-pending,
+.break-results-limit {
   opacity: 0.7;
   font-size: 0.9rem;
+}
+
+.break-results-order li.cut {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 /*# sourceMappingURL=styles.css.map */

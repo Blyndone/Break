@@ -19,6 +19,8 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     this.responses = new Map()
     /** @type {string[]} userIds that were sent the prompt */
     this.expected = []
+    /** @type {number|null} Keep only the fastest this many responses. */
+    this.limit = null
   }
 
   static DEFAULT_OPTIONS = {
@@ -45,14 +47,28 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     },
   }
 
-  async _prepareContext(options) {
-    const order = [...this.responses.entries()]
+  /**
+   * Current standings. Ranked on the reported time, not on arrival order, so a
+   * slow connection does not cost a player their place. The cap is applied
+   * after sorting for the same reason: a fast reaction that reaches us late
+   * still displaces a slower one that arrived first.
+   */
+  #standings() {
+    return [...this.responses.entries()]
       .sort(([, a], [, b]) => a - b)
       .map(([userId, elapsed], index) => ({
+        userId,
         rank: index + 1,
-        name: game.users.get(userId)?.name ?? userId,
         elapsed: Math.round(elapsed),
+        cut: this.limit != null && index >= this.limit,
       }))
+  }
+
+  async _prepareContext(options) {
+    const order = this.#standings().map((entry) => ({
+      ...entry,
+      name: game.users.get(entry.userId)?.name ?? entry.userId,
+    }))
 
     const pending = this.expected
       .filter((userId) => !this.responses.has(userId))
@@ -62,6 +78,7 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
       prompt: this.prompt,
       order,
       pending,
+      limit: this.limit,
       active: this.prompt != null,
     }
   }
@@ -69,16 +86,27 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
   /**
    * Broadcast a prompt to every other connected user and open the results.
    * @param {object} options
-   * @param {string} [options.text]  Message shown to players.
+   * @param {string} [options.text]    Message shown above the button.
+   * @param {number} [options.limit]   Keep only the fastest this many responses.
    */
-  async start({ text = 'Buzz in!' } = {}) {
+  async start({ text = '', limit = null } = {}) {
     const recipients = game.users.filter((user) => user.active && user.id !== game.user.id)
 
-    // Carry our own id so buzzes come back to this GM specifically, not to
-    // whichever GM socketlib would pick for executeAsGM.
-    this.prompt = { id: foundry.utils.randomID(), text, gmId: game.user.id }
     this.responses = new Map()
     this.expected = recipients.map((user) => user.id)
+    this.limit = limit
+
+    // Carry our own id so buzzes come back to this GM specifically, not to
+    // whichever GM socketlib would pick for executeAsGM. The limit rides along
+    // so the button can read "BREAK 3", and participants so every client can
+    // draw the same roster. Ids only: each client resolves its own portraits.
+    this.prompt = {
+      id: foundry.utils.randomID(),
+      text,
+      limit,
+      gmId: game.user.id,
+      participants: this.expected,
+    }
 
     await this.render({ force: true })
     await this.socket.executeForOthers('showPrompt', this.prompt)
@@ -100,6 +128,12 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
 
     this.responses.set(userId, elapsed)
     await this.render({ parts: ['results'] })
+
+    // Push the new standings so every roster updates, not just this GM's.
+    await this.socket.executeForOthers('syncStatus', {
+      promptId,
+      statuses: this.#standings(),
+    })
   }
 
   /** Close every client's overlay and end the round. */
