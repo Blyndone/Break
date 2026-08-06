@@ -22,7 +22,22 @@ and prompts "goblins". To open with a number in the text, put something before
 it: `/break the 3 goblins charge`.
 
 Players respond with the **BREAK** button on their own portrait, or the space
-bar. The GM's results window shows the running order and who has not answered.
+bar. The GM's results window ranks them live and shows who has not answered.
+
+## Settings
+
+| Setting           | Scope  | Default | Effect                                        |
+| ----------------- | ------ | ------- | --------------------------------------------- |
+| **Response Time** | World  | 5       | Seconds to respond. 0 removes the time limit. |
+| **Enabled**       | Client | on      | Turn the prompt off for one client            |
+
+A bar across the band counts the time down. When it runs out the buzzer closes
+and that player is marked as having missed it. The GM's window ends the round on
+its own one second after the deadline, which posts the results; the extra second
+lets a buzz sent just under the wire on a slow connection still count.
+
+With Response Time at 0 there is no countdown and the round stays open until the
+GM clicks **End Round**.
 
 ## How the ordering works
 

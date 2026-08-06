@@ -21,9 +21,13 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.shownAt = null
     this.buzzed = false
     this.elapsed = null
+    this.expired = false
     /** @type {Array<{userId: string, rank: number, elapsed: number, cut: boolean}>} */
     this.statuses = []
   }
+
+  /** @type {number|null} Handle for the countdown deadline. */
+  #timer = null
 
   /** Arrow function so the listener stays bound and removable. */
   #onKeyDown = (event) => {
@@ -75,12 +79,21 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     })
 
     const limit = this.prompt?.limit ?? null
+    const duration = this.prompt?.duration ?? 0
+
+    // The countdown is a CSS animation, but every sync re-renders this part and
+    // would restart it from full. A negative delay equal to the time already
+    // spent resumes it where it left off instead.
+    const spent = this.shownAt == null ? 0 : (performance.now() - this.shownAt) / 1000
 
     return {
       prompt: this.prompt,
       limit,
       headline: headlineFor(this.prompt),
       participants,
+      duration,
+      countdownDelay: (-Math.min(spent, duration)).toFixed(3),
+      expired: this.expired,
     }
   }
 
@@ -91,13 +104,17 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
    * @param {string} prompt.text           Message shown above the roster.
    * @param {string} prompt.gmId           GM to report back to.
    * @param {number|null} prompt.limit     Cap on accepted responses, if any.
+   * @param {number} prompt.duration       Seconds to respond; 0 for no limit.
    * @param {string[]} prompt.participants Everyone prompted, in roster order.
    */
   async show(prompt) {
+    this.#clearTimer()
+
     this.prompt = prompt
     this.buzzed = false
     this.elapsed = null
     this.shownAt = null
+    this.expired = false
     this.statuses = []
 
     await this.render({ force: true })
@@ -107,7 +124,27 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
       requestAnimationFrame(() => requestAnimationFrame(resolve))
     })
 
+    // The clock and the countdown bar start together.
     this.shownAt = performance.now()
+
+    if (prompt.duration > 0) {
+      this.#timer = setTimeout(() => this.#expire(), prompt.duration * 1000)
+    }
+  }
+
+  /** Time is up: stop accepting a buzz and show it on the roster. */
+  async #expire() {
+    this.#timer = null
+    if (this.expired || this.buzzed) return
+
+    this.expired = true
+    if (this.rendered) await this.render({ parts: ['prompt'] })
+  }
+
+  #clearTimer() {
+    if (this.#timer == null) return
+    clearTimeout(this.#timer)
+    this.#timer = null
   }
 
   /**
@@ -131,10 +168,13 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   async dismiss(promptId) {
     if (promptId && this.prompt?.id !== promptId) return
 
+    this.#clearTimer()
+
     this.prompt = null
     this.shownAt = null
     this.buzzed = false
     this.elapsed = null
+    this.expired = false
     this.statuses = []
 
     if (!this.rendered) return
@@ -184,10 +224,11 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   async buzz() {
     // shownAt is null between render and paint; a buzz that fast is a stray
     // event, not a reaction.
-    if (this.buzzed || this.shownAt == null) return
+    if (this.buzzed || this.expired || this.shownAt == null) return
 
     this.buzzed = true
     this.elapsed = performance.now() - this.shownAt
+    this.#clearTimer()
 
     await this.render({ parts: ['prompt'] })
 

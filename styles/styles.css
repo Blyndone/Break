@@ -66,6 +66,38 @@
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6509803922);
 }
 
+.break-timer {
+  width: min(52rem, 90%);
+  height: 0.6rem;
+  background: rgba(0, 0, 0, 0.3490196078);
+  border: 1px solid rgba(0, 0, 0, 0.4196078431);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.break-timer-fill {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brk-accent-color-light), #f2e2c4);
+  transform-origin: left center;
+  animation-name: break-countdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes break-countdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.break-timer.spent .break-timer-fill {
+  animation: none;
+  transform: scaleX(0);
+}
+
 .break-roster {
   display: flex;
   flex-direction: row;
@@ -144,6 +176,12 @@
 .break-badge.waiting {
   opacity: 0.6;
   font-size: 1.75rem;
+}
+
+.break-badge.missed {
+  color: #e0908a;
+  border-color: #8e6a66;
+  font-size: 1.9rem;
 }
 
 .break-buzzer {

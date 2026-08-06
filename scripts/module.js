@@ -35,6 +35,16 @@ Hooks.once('init', async function () {
     default: true,
     requiresReload: true,
   })
+
+  game.settings.register(BREAK_MODULE_NAME, 'duration', {
+    name: 'Response Time',
+    hint: 'Seconds players have to break in before the round closes. Set to 0 for no time limit.',
+    scope: 'world',
+    config: true,
+    type: Number,
+    range: { min: 0, max: 60, step: 1 },
+    default: 5,
+  })
 })
 
 /**

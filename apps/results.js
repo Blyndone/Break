@@ -3,6 +3,14 @@ import { headlineFor, participantFor } from './roster.js'
 const { ApplicationV2 } = foundry.applications.api
 const { api } = foundry.applications
 
+const MODULE_ID = 'break'
+
+/**
+ * Seconds to wait past the players' deadline before ending the round, so a buzz
+ * sent just under the wire on a slow connection still arrives in time to count.
+ */
+const GRACE_SECONDS = 1
+
 /**
  * GM side collector and display for a round of buzzing.
  *
@@ -24,6 +32,9 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     /** @type {number|null} Keep only the fastest this many responses. */
     this.limit = null
   }
+
+  /** @type {number|null} Handle for the auto-end deadline. */
+  #timer = null
 
   static DEFAULT_OPTIONS = {
     id: 'break-results',
@@ -94,7 +105,10 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
    * @param {number} [options.limit]   Keep only the fastest this many responses.
    */
   async start({ text = '', limit = null } = {}) {
+    this.#clearTimer()
+
     const recipients = game.users.filter((user) => user.active && user.id !== game.user.id)
+    const duration = game.settings.get(MODULE_ID, 'duration')
 
     this.responses = new Map()
     this.expected = recipients.map((user) => user.id)
@@ -108,12 +122,25 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
       id: foundry.utils.randomID(),
       text,
       limit,
+      duration,
       gmId: game.user.id,
       participants: this.expected,
     }
 
     await this.render({ force: true })
     await this.socket.executeForOthers('showPrompt', this.prompt)
+
+    // Clients stop accepting a buzz at the deadline; end the round a moment
+    // later so anything already in flight still lands.
+    if (duration > 0) {
+      this.#timer = setTimeout(() => this.dismiss(), (duration + GRACE_SECONDS) * 1000)
+    }
+  }
+
+  #clearTimer() {
+    if (this.#timer == null) return
+    clearTimeout(this.#timer)
+    this.#timer = null
   }
 
   /**
@@ -147,6 +174,8 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
   async dismiss() {
     const prompt = this.prompt
     if (!prompt) return
+
+    this.#clearTimer()
 
     // Clear first so a buzz that lands mid teardown is rejected.
     this.prompt = null

@@ -2,6 +2,15 @@
   <div class="break-headline">{{headline}}</div>
 
   <div class="break-band">
+    {{#if duration}}
+      <div class="break-timer {{#if expired}}spent{{/if}}">
+        <div
+          class="break-timer-fill"
+          style="animation-duration: {{duration}}s; animation-delay: {{countdownDelay}}s"
+        ></div>
+      </div>
+    {{/if}}
+
     <div class="break-roster">
       {{#each participants}}
         <div class="break-player {{#if this.isSelf}}self{{/if}} {{#if this.cut}}cut{{/if}}">
@@ -14,9 +23,13 @@
             </div>
             <div class="break-elapsed">{{this.elapsed}} ms</div>
           {{else if this.isSelf}}
-            <button type="button" class="break-badge break-buzzer" data-action="buzz">
-              BREAK{{#if ../limit}} {{../limit}}{{/if}}
-            </button>
+            {{#if ../expired}}
+              <div class="break-badge missed">&times;</div>
+            {{else}}
+              <button type="button" class="break-badge break-buzzer" data-action="buzz">
+                BREAK{{#if ../limit}} {{../limit}}{{/if}}
+              </button>
+            {{/if}}
           {{else}}
             <div class="break-badge waiting">&hellip;</div>
           {{/if}}
