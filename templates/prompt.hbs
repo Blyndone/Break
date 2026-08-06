@@ -1,25 +1,27 @@
-<div class="break-band">
-  {{#if prompt.text}}
-    <div class="break-prompt-text">{{prompt.text}}</div>
-  {{/if}}
+<div class="break-stage">
+  <div class="break-headline">{{headline}}</div>
 
-  <div class="break-roster">
-    {{#each participants}}
-      <div class="break-player {{#if this.isSelf}}self{{/if}} {{#if this.cut}}cut{{/if}}">
-        <img class="break-portrait" src="{{this.img}}" alt="{{this.name}}" />
-        <div class="break-player-name">{{this.name}}</div>
+  <div class="break-band">
+    <div class="break-roster">
+      {{#each participants}}
+        <div class="break-player {{#if this.isSelf}}self{{/if}} {{#if this.cut}}cut{{/if}}">
+          <img class="break-portrait" src="{{this.img}}" alt="{{this.name}}" />
+          <div class="break-player-name">{{this.name}}</div>
 
-        {{#if this.buzzed}}
-          <div class="break-badge buzzed">{{#if this.rank}}{{this.rank}}{{else}}&check;{{/if}}</div>
-          <div class="break-elapsed">{{this.elapsed}} ms</div>
-        {{else if this.isSelf}}
-          <button type="button" class="break-badge break-buzzer" data-action="buzz">
-            BREAK{{#if ../limit}} {{../limit}}{{/if}}
-          </button>
-        {{else}}
-          <div class="break-badge waiting">&hellip;</div>
-        {{/if}}
-      </div>
-    {{/each}}
+          {{#if this.buzzed}}
+            <div class="break-badge buzzed">
+              {{#if this.rank}}{{this.rank}}{{else}}&check;{{/if}}
+            </div>
+            <div class="break-elapsed">{{this.elapsed}} ms</div>
+          {{else if this.isSelf}}
+            <button type="button" class="break-badge break-buzzer" data-action="buzz">
+              BREAK{{#if ../limit}} {{../limit}}{{/if}}
+            </button>
+          {{else}}
+            <div class="break-badge waiting">&hellip;</div>
+          {{/if}}
+        </div>
+      {{/each}}
+    </div>
   </div>
 </div>

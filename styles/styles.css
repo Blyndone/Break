@@ -19,6 +19,38 @@
   align-items: center;
   background: var(--brk-backdrop);
   color: var(--brk-text-color);
+  opacity: 1;
+  transition: opacity 0.25s ease-out;
+}
+#break.break-closing {
+  opacity: 0;
+  pointer-events: none;
+}
+#break.minimizing {
+  max-height: none !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+.break-stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.break-headline {
+  max-width: 90vw;
+  text-align: center;
+  font-family: serif;
+  font-weight: bold;
+  font-variant: small-caps;
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+  text-shadow: 0 4px 12px #000, 0 0 30px rgba(0, 0, 0, 0.8);
 }
 
 .break-band {
@@ -32,15 +64,6 @@
   border-top: 2px solid rgba(0, 0, 0, 0.4);
   border-bottom: 2px solid rgba(0, 0, 0, 0.4);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6509803922);
-}
-
-.break-prompt-text {
-  font-family: serif;
-  font-size: 2rem;
-  font-variant: small-caps;
-  letter-spacing: 0.05em;
-  text-align: center;
-  text-shadow: 0 2px 6px #000;
 }
 
 .break-roster {

@@ -74,9 +74,14 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
       }
     })
 
+    const limit = this.prompt?.limit ?? null
+
     return {
       prompt: this.prompt,
-      limit: this.prompt?.limit ?? null,
+      limit,
+      // A supplied message takes the headline; otherwise it announces the call
+      // itself, with the cap when there is one.
+      headline: this.prompt?.text?.trim() || `BREAK${limit ? ` ${limit}` : ''}`,
       participants,
     }
   }
@@ -134,7 +139,43 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.elapsed = null
     this.statuses = []
 
-    if (this.rendered) await this.close()
+    if (!this.rendered) return
+
+    await this.#fadeOut()
+
+    // animate: false matters. ApplicationV2's close animation stamps the
+    // measured width/height and the window position onto the element as inline
+    // styles, then collapses it with max-height: 0. On a frameless full screen
+    // overlay that overrides our inset and drops the band at the top of the
+    // screen for the length of the transition.
+    await this.close({ animate: false })
+  }
+
+  /** Fade the overlay out before it is torn down. */
+  async #fadeOut() {
+    const element = this.element
+    if (!element) return
+
+    element.classList.add('break-closing')
+
+    await new Promise((resolve) => {
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        element.removeEventListener('transitionend', onEnd)
+        resolve()
+      }
+      const onEnd = (event) => {
+        // Children transition too; only our own opacity ends the fade.
+        if (event.target === element && event.propertyName === 'opacity') finish()
+      }
+
+      element.addEventListener('transitionend', onEnd)
+      // Fallback: transitionend never fires if the element is hidden or the
+      // user has reduced motion turned on.
+      setTimeout(finish, 400)
+    })
   }
 
   /** @this {Break} */
@@ -167,6 +208,8 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender(context, options)
+    // A re-render during a fade would otherwise stay invisible.
+    this.element?.classList.remove('break-closing')
     document.addEventListener('keydown', this.#onKeyDown)
   }
 

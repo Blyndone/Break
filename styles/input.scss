@@ -27,6 +27,48 @@
 
   background: var(--brk-backdrop);
   color: var(--brk-text-color);
+
+  opacity: 1;
+  transition: opacity 0.25s ease-out;
+
+  &.break-closing {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  // ApplicationV2 adds .minimizing with max-height: 0 as it closes. We close
+  // with animate: false so it is only up for a frame, but pin the layout
+  // anyway so nothing collapses or reflows on the way out.
+  &.minimizing {
+    max-height: none !important;
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+}
+
+.break-stage {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+// Sits above the band, in the dimmed area.
+.break-headline {
+  max-width: 90vw;
+  text-align: center;
+
+  font-family: serif;
+  font-weight: bold;
+  font-variant: small-caps;
+  // Shrinks on narrow viewports and for longer messages.
+  font-size: clamp(2.5rem, 7vw, 6rem);
+  line-height: 1.05;
+  letter-spacing: 0.06em;
+
+  text-shadow: 0 4px 12px #000, 0 0 30px #000000cc;
 }
 
 .break-band {
@@ -47,15 +89,6 @@
   border-top: 2px solid #00000066;
   border-bottom: 2px solid #00000066;
   box-shadow: 0 0 40px #000000a6;
-}
-
-.break-prompt-text {
-  font-family: serif;
-  font-size: 2rem;
-  font-variant: small-caps;
-  letter-spacing: 0.05em;
-  text-align: center;
-  text-shadow: 0 2px 6px #000;
 }
 
 .break-roster {
