@@ -58,4 +58,39 @@
   opacity: 0.7;
 }
 
+.break-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.break-results-prompt {
+  font-family: serif;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.break-results-order {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.break-results-order li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.15rem 0;
+}
+
+.break-results-elapsed {
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.break-results-empty,
+.break-results-pending {
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+
 /*# sourceMappingURL=styles.css.map */

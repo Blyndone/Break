@@ -1,0 +1,28 @@
+<div class="break-results">
+  {{#if prompt}}
+    <div class="break-results-prompt">{{prompt.text}}</div>
+  {{/if}}
+
+  {{#if order.length}}
+    <ol class="break-results-order">
+      {{#each order}}
+        <li>
+          <span class="break-results-name">{{this.name}}</span>
+          <span class="break-results-elapsed">{{this.elapsed}} ms</span>
+        </li>
+      {{/each}}
+    </ol>
+  {{else}}
+    <div class="break-results-empty">No responses yet.</div>
+  {{/if}}
+
+  {{#if pending.length}}
+    <div class="break-results-pending">
+      Waiting on: {{#each pending}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+    </div>
+  {{/if}}
+
+  {{#if active}}
+    <button type="button" data-action="dismiss">End Round</button>
+  {{/if}}
+</div>
