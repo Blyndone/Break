@@ -72,6 +72,7 @@
 }
 
 .break-band {
+  position: relative;
   width: 100%;
   padding: 2rem 1rem 3.5rem;
 
@@ -89,6 +90,39 @@
   border-top: 2px solid #00000066;
   border-bottom: 2px solid #00000066;
   box-shadow: 0 0 40px #000000a6;
+}
+
+// Hovers on the band's top edge, centred. Updated every frame from JS, since
+// millisecond precision is past what a CSS animation can express.
+.break-clock {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+
+  padding: 0.2rem 1.1rem;
+
+  font-family: serif;
+  font-size: 2.6rem;
+  font-weight: bold;
+  line-height: 1.1;
+  // Fixed width digits, so the number does not jitter as it counts.
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+
+  background: #0b0b0be0;
+  border: 2px solid #00000073;
+  border-radius: 999px;
+  box-shadow: 0 6px 18px #000000a6;
+  text-shadow: 0 2px 6px #000;
+
+  // Decorative: never let it swallow a click meant for the buzzer.
+  pointer-events: none;
+}
+
+.break-clock.spent {
+  color: #e0908a;
 }
 
 // Countdown. Driven by a CSS animation rather than a per-frame timer; the

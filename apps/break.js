@@ -29,6 +29,46 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   /** @type {number|null} Handle for the countdown deadline. */
   #timer = null
 
+  /** @type {number|null} Handle for the running clock's animation frame. */
+  #clockFrame = null
+
+  /**
+   * Seconds on the clock right now: time left while a limit is running, or time
+   * spent when there is none.
+   * @returns {number}
+   */
+  #clockValue() {
+    const duration = this.prompt?.duration ?? 0
+    const spent = this.shownAt == null ? 0 : (performance.now() - this.shownAt) / 1000
+    return duration > 0 ? Math.max(0, duration - spent) : spent
+  }
+
+  /**
+   * Repaint the clock every frame. Text only, so it costs nothing to run and
+   * does not disturb the surrounding layout.
+   */
+  #tick = () => {
+    const display = this.element?.querySelector('[data-clock]')
+    if (!display) {
+      this.#clockFrame = null
+      return
+    }
+
+    display.textContent = this.#clockValue().toFixed(3)
+    this.#clockFrame = requestAnimationFrame(this.#tick)
+  }
+
+  #startClock() {
+    this.#stopClock()
+    this.#clockFrame = requestAnimationFrame(this.#tick)
+  }
+
+  #stopClock() {
+    if (this.#clockFrame == null) return
+    cancelAnimationFrame(this.#clockFrame)
+    this.#clockFrame = null
+  }
+
   /** Arrow function so the listener stays bound and removable. */
   #onKeyDown = (event) => {
     if (event.code !== 'Space' || event.repeat) return
@@ -93,6 +133,9 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
       participants,
       duration,
       countdownDelay: (-Math.min(spent, duration)).toFixed(3),
+      // Seeded so the first paint already shows the right number; the frame
+      // loop takes over from there.
+      clock: this.#clockValue().toFixed(3),
       expired: this.expired,
     }
   }
@@ -250,10 +293,14 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     // A re-render during a fade would otherwise stay invisible.
     this.element?.classList.remove('break-closing')
     document.addEventListener('keydown', this.#onKeyDown)
+    // Every sync replaces the element the clock was writing into, so the loop
+    // has to be pointed at the new one.
+    this.#startClock()
   }
 
   _onClose(options) {
     super._onClose(options)
     document.removeEventListener('keydown', this.#onKeyDown)
+    this.#stopClock()
   }
 }

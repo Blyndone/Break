@@ -54,6 +54,7 @@
 }
 
 .break-band {
+  position: relative;
   width: 100%;
   padding: 2rem 1rem 3.5rem;
   display: flex;
@@ -64,6 +65,31 @@
   border-top: 2px solid rgba(0, 0, 0, 0.4);
   border-bottom: 2px solid rgba(0, 0, 0, 0.4);
   box-shadow: 0 0 40px rgba(0, 0, 0, 0.6509803922);
+}
+
+.break-clock {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  padding: 0.2rem 1.1rem;
+  font-family: serif;
+  font-size: 2.6rem;
+  font-weight: bold;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  background: rgba(11, 11, 11, 0.8784313725);
+  border: 2px solid rgba(0, 0, 0, 0.4509803922);
+  border-radius: 999px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6509803922);
+  text-shadow: 0 2px 6px #000;
+  pointer-events: none;
+}
+
+.break-clock.spent {
+  color: #e0908a;
 }
 
 .break-timer {

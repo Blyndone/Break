@@ -2,6 +2,8 @@
   <div class="break-headline">{{headline}}</div>
 
   <div class="break-band">
+    <div class="break-clock {{#if expired}}spent{{/if}}" data-clock>{{clock}}</div>
+
     {{#if duration}}
       <div class="break-timer {{#if expired}}spent{{/if}}">
         <div
