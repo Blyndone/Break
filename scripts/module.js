@@ -109,7 +109,8 @@ Hooks.once('ready', async function () {
     /**
      * Prompt every other connected user and open the results window.
      * @param {object} [options]
-     * @param {string} [options.text]  Message shown to players.
+     * @param {string} [options.text]   Message shown to players.
+     * @param {number} [options.limit]  Keep only the fastest this many responses.
      */
     prompt: (options) => breakResults?.start(options),
     /** End the current round and close every overlay. */
