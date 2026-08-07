@@ -117,16 +117,6 @@ reaches the GM late still displaces a slower one that arrived first.
 - Foundry VTT **v13** (13.302 or later)
 - [socketlib](https://github.com/manuelVo/foundryvtt-socketlib)
 
-## 🛠️ Development
-
-Styles are authored in `styles/input.scss` and compiled to `styles/styles.css`:
-
-```
-sass styles/input.scss styles/styles.css
-```
-
-The compiled CSS is committed, since it is what ships in the release archive.
-
 ## 📄 License
 
 Released under the [GPL-3.0](LICENSE) license.
