@@ -1,0 +1,24 @@
+{{!--
+  One player on the roster. Drawn the same way wherever the round is shown; the
+  surrounding band decides how large the cards are.
+--}}
+<div class="break-player {{#if isSelf}}self{{/if}} {{#if cut}}cut{{/if}}">
+  <img class="break-portrait" src="{{img}}" alt="{{name}}" />
+  <div class="break-player-name">{{name}}</div>
+
+  {{#if buzzed}}
+    <div class="break-badge buzzed">
+      {{#if rank}}{{rank}}{{else}}&check;{{/if}}
+    </div>
+    <div class="break-elapsed">
+      {{elapsed}} ms
+      {{#if gap}}<span class="break-gap">+{{gap}}</span>{{/if}}
+    </div>
+  {{else if buzzer}}
+    <button type="button" class="break-badge break-buzzer" data-action="buzz">{{call}}</button>
+  {{else if missed}}
+    <div class="break-badge missed">&times;</div>
+  {{else}}
+    <div class="break-badge waiting">&hellip;</div>
+  {{/if}}
+</div>

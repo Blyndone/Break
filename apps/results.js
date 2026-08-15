@@ -1,7 +1,5 @@
-import { headlineFor, participantFor } from './roster.js'
-
-const { ApplicationV2 } = foundry.applications.api
-const { api } = foundry.applications
+import { BreakOverlay } from './overlay.js'
+import { headlineFor, participantFor, rosterFor } from './roster.js'
 
 const MODULE_ID = 'break'
 
@@ -17,8 +15,12 @@ const GRACE_SECONDS = 1
  * Holds the authoritative record of who was prompted and who has responded.
  * Responses carry a client measured elapsed time; this class only validates
  * and sorts them.
+ *
+ * The GM sees the same full screen overlay the players do, ranked fastest
+ * first and carrying the detail the table does not need: the gap behind the
+ * leader, who is still out, and the controls to end the round.
  */
-export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) {
+export class BreakResults extends BreakOverlay {
   constructor(options = {}) {
     super(options)
 
@@ -38,18 +40,9 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
 
   static DEFAULT_OPTIONS = {
     id: 'break-results',
-    tag: 'div',
-    window: {
-      title: 'Break',
-      icon: 'fa-solid fa-bell',
-      resizable: true,
-    },
-    position: {
-      width: 400,
-      height: 'auto',
-    },
     actions: {
       dismiss: BreakResults.onDismiss,
+      cancel: BreakResults.onCancel,
     },
   }
 
@@ -57,6 +50,8 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     results: {
       template: 'modules/break/templates/results.hbs',
       id: 'results',
+      // The same card the players see, loaded as a partial before each render.
+      templates: ['modules/break/templates/roster-card.hbs'],
     },
   }
 
@@ -78,22 +73,27 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   async _prepareContext(options) {
-    // Re-sorted on every buzz, so the window reads as a live leaderboard.
-    const order = this.#standings().map((entry) => ({
-      ...entry,
-      ...participantFor(entry.userId),
-    }))
-
-    const pending = this.expected
-      .filter((userId) => !this.responses.has(userId))
-      .map((userId) => participantFor(userId))
+    // Re-sorted on every buzz, so the window reads as a live leaderboard while
+    // everyone still waiting keeps their place at the back of it.
+    const participants = rosterFor({
+      participants: this.expected,
+      statuses: this.#standings(),
+      limit: this.limit,
+      expired: this.clock.spentOut,
+      order: 'rank',
+    })
 
     return {
       prompt: this.prompt,
       headline: headlineFor(this.prompt),
-      order,
-      pending,
+      participants,
+      answered: this.responses.size,
+      total: this.expected.length,
       limit: this.limit,
+      duration: this.clock.duration,
+      countdownDelay: this.clock.delay,
+      clock: this.clock.reading,
+      expired: this.clock.spentOut,
       active: this.prompt != null,
     }
   }
@@ -113,6 +113,7 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     this.responses = new Map()
     this.expected = recipients.map((user) => user.id)
     this.limit = limit
+    this.clock.arm(duration)
 
     // Carry our own id so buzzes come back to this GM specifically, not to
     // whichever GM socketlib would pick for executeAsGM. The limit rides along
@@ -130,11 +131,23 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     await this.render({ force: true })
     await this.socket.executeForOthers('showPrompt', this.prompt)
 
-    // Clients stop accepting a buzz at the deadline; end the round a moment
-    // later so anything already in flight still lands.
+    // Started once the prompt is on its way out, so this readout tracks the
+    // players' own clocks rather than the time spent opening this window.
+    this.clock.begin()
+
     if (duration > 0) {
-      this.#timer = setTimeout(() => this.dismiss(), (duration + GRACE_SECONDS) * 1000)
+      this.#timer = setTimeout(() => this.#expire(), duration * 1000)
     }
+  }
+
+  /**
+   * Time is up. Clients have stopped accepting a buzz, so the roster settles
+   * into its final shape; the round itself ends a moment later, so anything
+   * already in flight still lands.
+   */
+  async #expire() {
+    this.#timer = setTimeout(() => this.dismiss(), GRACE_SECONDS * 1000)
+    if (this.rendered) await this.render({ parts: ['results'] })
   }
 
   #clearTimer() {
@@ -169,20 +182,25 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
 
   /**
    * End the round: drop every client's overlay, post the results to chat, then
-   * close this window.
+   * fade this overlay out.
+   * @param {object} [options]
+   * @param {boolean} [options.post]  Post the standings to chat. Cancelling a
+   *                                  round ends it without a record.
    */
-  async dismiss() {
+  async dismiss({ post = true } = {}) {
     const prompt = this.prompt
     if (!prompt) return
 
     this.#clearTimer()
+    this.clock.stop()
 
-    // Clear first so a buzz that lands mid teardown is rejected.
+    // Clear first so a buzz that lands mid teardown is rejected, and so the
+    // close below does not come back through here.
     this.prompt = null
 
     await this.socket.executeForOthers('dismissPrompt', prompt.id)
-    await this.#postResults(prompt)
-    await this.close()
+    if (post) await this.#postResults(prompt)
+    await this.closeOverlay()
   }
 
   /**
@@ -214,8 +232,23 @@ export class BreakResults extends api.HandlebarsApplicationMixin(ApplicationV2) 
     })
   }
 
+  _onClose(options) {
+    super._onClose(options)
+    this.clock.reset()
+
+    // Closed with a round still running, by Escape or by anything else that
+    // reaches past the buttons. End it properly rather than leaving every
+    // player staring at an overlay nobody can clear.
+    if (this.prompt) this.dismiss()
+  }
+
   /** @this {BreakResults} */
   static async onDismiss(event, target) {
     await this.dismiss()
+  }
+
+  /** @this {BreakResults} */
+  static async onCancel(event, target) {
+    await this.dismiss({ post: false })
   }
 }

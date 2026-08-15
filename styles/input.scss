@@ -11,12 +11,18 @@
   --brk-accent-color: #c9593f;
   --brk-accent-color-light: #e46f55;
 
+  // The roster scales off these three: the GM window draws the same cards at a
+  // size that fits in a window rather than across a screen.
   --brk-portrait-width: 190px;
+  --brk-badge-size: 3.5rem;
+  --brk-badge-font-size: 1.5rem;
 }
 
 // Dim the whole screen, but the roster sits in a band across the middle so the
-// scene stays readable above and below it.
-#break {
+// scene stays readable above and below it. The players' prompt and the GM's
+// view of the same round are both drawn this way.
+#break,
+#break-results {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -92,15 +98,9 @@
   box-shadow: 0 0 40px #000000a6;
 }
 
-// Hovers on the band's top edge, centred. Updated every frame from JS, since
-// millisecond precision is past what a CSS animation can express.
+// The millisecond readout. Updated every frame from JS, since that precision is
+// past what a CSS animation can express.
 .break-clock {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
-
   padding: 0.2rem 1.1rem;
 
   font-family: serif;
@@ -111,6 +111,7 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 
+  color: var(--brk-text-color);
   background: #0b0b0be0;
   border: 2px solid #00000073;
   border-radius: 999px;
@@ -119,6 +120,15 @@
 
   // Decorative: never let it swallow a click meant for the buzzer.
   pointer-events: none;
+}
+
+// On the overlay it hovers on the band's top edge, centred.
+.break-band .break-clock {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
 }
 
 .break-clock.spent {
@@ -180,7 +190,7 @@
   aspect-ratio: 3 / 4;
 
   // Room for the badge that hangs off the bottom edge.
-  margin-bottom: 2.25rem;
+  margin-bottom: calc(var(--brk-badge-size) / 2 + 0.5rem);
 
   transition: transform 0.15s ease-out;
 
@@ -234,12 +244,12 @@
 // Circular badge straddling the bottom edge of the portrait.
 .break-badge {
   position: absolute;
-  bottom: -1.75rem;
+  bottom: calc(var(--brk-badge-size) / -2);
   left: 50%;
   transform: translateX(-50%);
 
-  height: 3.5rem;
-  min-width: 3.5rem;
+  height: var(--brk-badge-size);
+  min-width: var(--brk-badge-size);
 
   display: flex;
   justify-content: center;
@@ -251,27 +261,27 @@
   color: var(--brk-text-color);
 
   font-family: serif;
-  font-size: 1.5rem;
+  font-size: var(--brk-badge-font-size);
   font-weight: bold;
   box-shadow: 0 4px 10px #000000a6;
 }
 
 .break-badge.waiting {
   opacity: 0.6;
-  font-size: 1.75rem;
+  font-size: calc(var(--brk-badge-font-size) * 1.15);
 }
 
 // Ran out of time without responding.
 .break-badge.missed {
   color: #e0908a;
   border-color: #8e6a66;
-  font-size: 1.9rem;
+  font-size: calc(var(--brk-badge-font-size) * 1.25);
 }
 
 // The self badge is a pill rather than a circle so "BREAK 3" fits.
 .break-buzzer {
   padding: 0 1.5rem;
-  font-size: 1.25rem;
+  font-size: calc(var(--brk-badge-font-size) * 0.85);
   letter-spacing: 0.08em;
   white-space: nowrap;
   cursor: pointer;
@@ -291,98 +301,117 @@
   }
 }
 
+// Sits clear of the badge, which already hangs half off the portrait.
 .break-elapsed {
   position: absolute;
-  bottom: -3.4rem;
+  bottom: calc(var(--brk-badge-size) / -2 - 1.65rem);
   left: 0;
   right: 0;
 
   text-align: center;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   text-shadow: 0 2px 4px #000;
   opacity: 0.85;
 }
 
-// GM results window
-.break-results {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.5rem;
+// How far behind the leader this buzz was.
+.break-gap {
+  margin-left: 0.3rem;
+  opacity: 0.7;
 }
 
-.break-results-prompt {
+// The GM watches the same band the table does, so the only differences are the
+// ones they need: every name legible without a hover, and a control bar under
+// the band.
+#break-results {
+  // Every card is read rather than reached for, so the roster is drawn a little
+  // smaller and more of it fits across the band.
+  --brk-portrait-width: 150px;
+  --brk-badge-size: 2.9rem;
+  --brk-badge-font-size: 1.25rem;
+
+  .break-player-name {
+    opacity: 1;
+  }
+}
+
+.break-gm-bar {
+  max-width: 90vw;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.break-gm-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  text-shadow: 0 2px 6px #000;
+}
+
+.break-gm-count {
   font-family: serif;
   font-variant: small-caps;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   font-weight: bold;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
 }
 
-.break-results-order {
-  // The rank is rendered explicitly rather than left to the list marker:
-  // display: flex on the items takes them out of list-item, which suppresses
-  // any marker the browser would otherwise draw.
-  list-style: none;
-  margin: 0;
-  padding: 0;
-
-  li {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.2rem 0;
-
-    &:not(:last-child) {
-      border-bottom: 1px solid #ffffff1a;
-    }
-
-    &.cut {
-      opacity: 0.45;
-      text-decoration: line-through;
-    }
-  }
-
-  &.pending {
-    opacity: 0.5;
-  }
+.break-gm-note {
+  opacity: 0.75;
+  font-size: 0.9rem;
 }
 
-.break-results-rank {
-  flex: 0 0 1.4rem;
-  text-align: center;
+.break-gm-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.break-gm-button {
+  padding: 0.4rem 1.4rem;
+  width: auto;
+
+  font-family: serif;
+  font-variant: small-caps;
+  font-size: 1.1rem;
   font-weight: bold;
-  font-variant-numeric: tabular-nums;
-}
+  letter-spacing: 0.06em;
+  cursor: pointer;
 
-.break-results-portrait {
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  object-fit: cover;
-  border: 1px solid #0000005e;
-  border-radius: 3px;
-}
+  color: var(--brk-text-color);
+  background: var(--brk-accent-color);
+  border: 2px solid var(--brk-accent-color-light);
+  border-radius: 999px;
+  box-shadow: 0 4px 10px #000000a6;
 
-.break-results-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out;
 
-.break-results-elapsed {
-  flex: 0 0 auto;
-  opacity: 0.7;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-}
+  &:hover {
+    background: var(--brk-accent-color-light);
+    box-shadow: 0 0 18px var(--brk-accent-color-light);
+  }
 
-.break-results-note {
-  opacity: 0.7;
-  font-size: 0.85rem;
+  &:active {
+    transform: scale(0.96);
+  }
+
+  // Ending the round without a record is the lesser of the two, so it does not
+  // compete with the button that finishes it properly.
+  &.quiet {
+    background: var(--brk-badge-bg);
+    border-color: #ffffff40;
+
+    &:hover {
+      background: #2a2a2a;
+      box-shadow: 0 0 12px #00000080;
+    }
+  }
 }
 
 // Chat card posted when a round ends

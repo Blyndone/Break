@@ -25,8 +25,10 @@ ordering reflects reaction speed, not latency.
 overlay painting and its player responding, then reports that number. The GM
 ranks on reported times, never on message arrival order.
 
-✅ **Live GM results window** – Ranks fill in as buzzes land, with the players
-who have not answered yet still listed.
+✅ **Live GM overlay** – The GM watches the same band the table does, ranked
+fastest first as buzzes land, with every name legible, the gap behind the leader
+under each time, and the players who have not answered yet still on the roster.
+Cards slide into place as the standings reorder.
 
 ✅ **Response caps** – `/break 3` keeps only the fastest three. Capped-out
 responses stay visible but greyed, so the GM can still read the whole field.
@@ -91,12 +93,13 @@ api.dismiss()
 | **Enabled**       | Client | on      | Turn the prompt off for one client            |
 
 When the countdown runs out the buzzer closes and that player is marked as
-having missed it. The GM's window ends the round on its own one second after the
-deadline, which posts the results; the extra second lets a buzz sent just under
-the wire on a slow connection still count.
+having missed it. The GM's overlay ends the round on its own one second after
+the deadline, which posts the results; the extra second lets a buzz sent just
+under the wire on a slow connection still count.
 
 With Response Time at 0 there is no countdown and the round stays open until the
-GM clicks **End Round**.
+GM clicks **End Round**. **Cancel** ends the round the same way but posts
+nothing to chat.
 
 ## 🧮 How the ordering works
 

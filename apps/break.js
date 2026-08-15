@@ -1,7 +1,5 @@
-import { headlineFor, participantFor } from './roster.js'
-
-const { ApplicationV2 } = foundry.applications.api
-const { api } = foundry.applications
+import { BreakOverlay } from './overlay.js'
+import { headlineFor, rosterFor } from './roster.js'
 
 /**
  * Full screen buzzer prompt shown on a responding client.
@@ -11,14 +9,13 @@ const { api } = foundry.applications
  * client's render cost. Ordering is therefore client measured: each client
  * reports its own elapsed time and the GM sorts on that.
  */
-export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
+export class Break extends BreakOverlay {
   constructor(options = {}) {
     super(options)
 
     this.socket = options.socket
 
     this.prompt = null
-    this.shownAt = null
     this.buzzed = false
     this.elapsed = null
     this.expired = false
@@ -29,46 +26,6 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   /** @type {number|null} Handle for the countdown deadline. */
   #timer = null
 
-  /** @type {number|null} Handle for the running clock's animation frame. */
-  #clockFrame = null
-
-  /**
-   * Seconds on the clock right now: time left while a limit is running, or time
-   * spent when there is none.
-   * @returns {number}
-   */
-  #clockValue() {
-    const duration = this.prompt?.duration ?? 0
-    const spent = this.shownAt == null ? 0 : (performance.now() - this.shownAt) / 1000
-    return duration > 0 ? Math.max(0, duration - spent) : spent
-  }
-
-  /**
-   * Repaint the clock every frame. Text only, so it costs nothing to run and
-   * does not disturb the surrounding layout.
-   */
-  #tick = () => {
-    const display = this.element?.querySelector('[data-clock]')
-    if (!display) {
-      this.#clockFrame = null
-      return
-    }
-
-    display.textContent = this.#clockValue().toFixed(3)
-    this.#clockFrame = requestAnimationFrame(this.#tick)
-  }
-
-  #startClock() {
-    this.#stopClock()
-    this.#clockFrame = requestAnimationFrame(this.#tick)
-  }
-
-  #stopClock() {
-    if (this.#clockFrame == null) return
-    cancelAnimationFrame(this.#clockFrame)
-    this.#clockFrame = null
-  }
-
   /** Arrow function so the listener stays bound and removable. */
   #onKeyDown = (event) => {
     if (event.code !== 'Space' || event.repeat) return
@@ -78,11 +35,6 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
 
   static DEFAULT_OPTIONS = {
     id: 'break',
-    tag: 'div',
-    window: {
-      frame: false,
-      positioned: false,
-    },
     actions: {
       buzz: Break.onBuzz,
     },
@@ -92,50 +44,32 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     prompt: {
       template: 'modules/break/templates/prompt.hbs',
       id: 'prompt',
+      // Loaded and registered as a partial ahead of every render.
+      templates: ['modules/break/templates/roster-card.hbs'],
     },
   }
 
   async _prepareContext(options) {
-    const statuses = new Map(this.statuses.map((status) => [status.userId, status]))
-
-    const participants = (this.prompt?.participants ?? []).map((userId) => {
-      const isSelf = userId === game.user.id
-      const status = statuses.get(userId)
-
-      // Trust local state for our own tile so the player sees their time
-      // immediately, before the GM's broadcast comes back.
-      const buzzed = isSelf ? this.buzzed : status != null
-      const elapsed =
-        isSelf && this.elapsed != null ? Math.round(this.elapsed) : (status?.elapsed ?? null)
-
-      return {
-        ...participantFor(userId),
-        isSelf,
-        buzzed,
-        elapsed,
-        rank: status?.rank ?? null,
-        cut: status?.cut ?? false,
-      }
+    // Roster order, so a tile never moves under the player reaching for it.
+    const participants = rosterFor({
+      participants: this.prompt?.participants ?? [],
+      statuses: this.statuses,
+      limit: this.prompt?.limit ?? null,
+      expired: this.expired,
+      selfId: game.user.id,
+      self: { buzzed: this.buzzed, elapsed: this.elapsed },
     })
-
-    const limit = this.prompt?.limit ?? null
-    const duration = this.prompt?.duration ?? 0
-
-    // The countdown is a CSS animation, but every sync re-renders this part and
-    // would restart it from full. A negative delay equal to the time already
-    // spent resumes it where it left off instead.
-    const spent = this.shownAt == null ? 0 : (performance.now() - this.shownAt) / 1000
 
     return {
       prompt: this.prompt,
-      limit,
+      limit: this.prompt?.limit ?? null,
       headline: headlineFor(this.prompt),
       participants,
-      duration,
-      countdownDelay: (-Math.min(spent, duration)).toFixed(3),
+      duration: this.clock.duration,
+      countdownDelay: this.clock.delay,
       // Seeded so the first paint already shows the right number; the frame
       // loop takes over from there.
-      clock: this.#clockValue().toFixed(3),
+      clock: this.clock.reading,
       expired: this.expired,
     }
   }
@@ -156,9 +90,9 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.prompt = prompt
     this.buzzed = false
     this.elapsed = null
-    this.shownAt = null
     this.expired = false
     this.statuses = []
+    this.clock.arm(prompt.duration)
 
     await this.render({ force: true })
 
@@ -168,7 +102,7 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     })
 
     // The clock and the countdown bar start together.
-    this.shownAt = performance.now()
+    this.clock.begin()
 
     if (prompt.duration > 0) {
       this.#timer = setTimeout(() => this.#expire(), prompt.duration * 1000)
@@ -214,49 +148,13 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
     this.#clearTimer()
 
     this.prompt = null
-    this.shownAt = null
     this.buzzed = false
     this.elapsed = null
     this.expired = false
     this.statuses = []
+    this.clock.reset()
 
-    if (!this.rendered) return
-
-    await this.#fadeOut()
-
-    // animate: false matters. ApplicationV2's close animation stamps the
-    // measured width/height and the window position onto the element as inline
-    // styles, then collapses it with max-height: 0. On a frameless full screen
-    // overlay that overrides our inset and drops the band at the top of the
-    // screen for the length of the transition.
-    await this.close({ animate: false })
-  }
-
-  /** Fade the overlay out before it is torn down. */
-  async #fadeOut() {
-    const element = this.element
-    if (!element) return
-
-    element.classList.add('break-closing')
-
-    await new Promise((resolve) => {
-      let settled = false
-      const finish = () => {
-        if (settled) return
-        settled = true
-        element.removeEventListener('transitionend', onEnd)
-        resolve()
-      }
-      const onEnd = (event) => {
-        // Children transition too; only our own opacity ends the fade.
-        if (event.target === element && event.propertyName === 'opacity') finish()
-      }
-
-      element.addEventListener('transitionend', onEnd)
-      // Fallback: transitionend never fires if the element is hidden or the
-      // user has reduced motion turned on.
-      setTimeout(finish, 400)
-    })
+    await this.closeOverlay()
   }
 
   /** @this {Break} */
@@ -265,12 +163,12 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   async buzz() {
-    // shownAt is null between render and paint; a buzz that fast is a stray
-    // event, not a reaction.
-    if (this.buzzed || this.expired || this.shownAt == null) return
+    // The clock has not started between render and paint; a buzz that fast is
+    // a stray event, not a reaction.
+    if (this.buzzed || this.expired || this.clock.elapsed == null) return
 
     this.buzzed = true
-    this.elapsed = performance.now() - this.shownAt
+    this.elapsed = this.clock.elapsed
     this.#clearTimer()
 
     await this.render({ parts: ['prompt'] })
@@ -290,17 +188,11 @@ export class Break extends api.HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(context, options) {
     super._onRender(context, options)
-    // A re-render during a fade would otherwise stay invisible.
-    this.element?.classList.remove('break-closing')
     document.addEventListener('keydown', this.#onKeyDown)
-    // Every sync replaces the element the clock was writing into, so the loop
-    // has to be pointed at the new one.
-    this.#startClock()
   }
 
   _onClose(options) {
     super._onClose(options)
     document.removeEventListener('keydown', this.#onKeyDown)
-    this.#stopClock()
   }
 }

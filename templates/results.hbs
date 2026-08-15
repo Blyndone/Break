@@ -1,39 +1,47 @@
-<div class="break-results">
-  <div class="break-results-prompt">{{headline}}</div>
+{{!--
+  The GM's view of a round: the band the players are looking at, ranked fastest
+  first and carrying what only the GM needs — the gap behind the leader, how
+  many are still out, and the controls to end the round.
+--}}
+<div class="break-stage">
+  <div class="break-headline">{{headline}}</div>
 
-  {{#if limit}}
-    <div class="break-results-note">Keeping the fastest {{limit}}.</div>
-  {{/if}}
+  <div class="break-band">
+    <div class="break-clock {{#if expired}}spent{{/if}}" data-clock>{{clock}}</div>
 
-  {{#if order.length}}
-    <ol class="break-results-order">
-      {{#each order}}
-        <li class="{{#if this.cut}}cut{{/if}}">
-          <span class="break-results-rank">{{this.rank}}</span>
-          <img class="break-results-portrait" src="{{this.img}}" alt="{{this.name}}" />
-          <span class="break-results-name">{{this.name}}</span>
-          <span class="break-results-elapsed">{{this.elapsed}} ms</span>
-        </li>
-      {{/each}}
-    </ol>
-  {{else}}
-    <div class="break-results-note">No responses yet.</div>
-  {{/if}}
+    {{#if duration}}
+      <div class="break-timer {{#if expired}}spent{{/if}}">
+        <div
+          class="break-timer-fill"
+          style="animation-duration: {{duration}}s; animation-delay: {{countdownDelay}}s"
+        ></div>
+      </div>
+    {{/if}}
 
-  {{#if pending.length}}
-    <ol class="break-results-order pending">
-      {{#each pending}}
-        <li>
-          <span class="break-results-rank">&ndash;</span>
-          <img class="break-results-portrait" src="{{this.img}}" alt="{{this.name}}" />
-          <span class="break-results-name">{{this.name}}</span>
-          <span class="break-results-elapsed">&hellip;</span>
-        </li>
-      {{/each}}
-    </ol>
-  {{/if}}
+    {{#if participants.length}}
+      <div class="break-roster">
+        {{#each participants}}
+          {{> "modules/break/templates/roster-card.hbs"}}
+        {{/each}}
+      </div>
+    {{else}}
+      <div class="break-gm-note">Nobody else is connected.</div>
+    {{/if}}
+  </div>
 
-  {{#if active}}
-    <button type="button" data-action="dismiss">End Round</button>
-  {{/if}}
+  <div class="break-gm-bar">
+    <div class="break-gm-status">
+      <span class="break-gm-count">{{answered}} of {{total}} in</span>
+      {{#if limit}}
+        <span class="break-gm-note">Keeping the fastest {{limit}}.</span>
+      {{/if}}
+    </div>
+
+    {{#if active}}
+      <div class="break-gm-controls">
+        <button type="button" class="break-gm-button" data-action="dismiss">End Round</button>
+        <button type="button" class="break-gm-button quiet" data-action="cancel">Cancel</button>
+      </div>
+    {{/if}}
+  </div>
 </div>

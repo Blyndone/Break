@@ -15,27 +15,7 @@
 
     <div class="break-roster">
       {{#each participants}}
-        <div class="break-player {{#if this.isSelf}}self{{/if}} {{#if this.cut}}cut{{/if}}">
-          <img class="break-portrait" src="{{this.img}}" alt="{{this.name}}" />
-          <div class="break-player-name">{{this.name}}</div>
-
-          {{#if this.buzzed}}
-            <div class="break-badge buzzed">
-              {{#if this.rank}}{{this.rank}}{{else}}&check;{{/if}}
-            </div>
-            <div class="break-elapsed">{{this.elapsed}} ms</div>
-          {{else if this.isSelf}}
-            {{#if ../expired}}
-              <div class="break-badge missed">&times;</div>
-            {{else}}
-              <button type="button" class="break-badge break-buzzer" data-action="buzz">
-                BREAK{{#if ../limit}} {{../limit}}{{/if}}
-              </button>
-            {{/if}}
-          {{else}}
-            <div class="break-badge waiting">&hellip;</div>
-          {{/if}}
-        </div>
+        {{> "modules/break/templates/roster-card.hbs"}}
       {{/each}}
     </div>
   </div>
