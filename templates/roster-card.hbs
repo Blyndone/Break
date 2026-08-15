@@ -2,7 +2,10 @@
   One player on the roster. Drawn the same way wherever the round is shown; the
   surrounding band decides how large the cards are.
 --}}
-<div class="break-player {{#if isSelf}}self{{/if}} {{#if cut}}cut{{/if}}">
+<div
+  class="break-player {{#if isSelf}}self{{/if}} {{#if cut}}cut{{/if}}"
+  data-card="{{userId}}"
+>
   <img class="break-portrait" src="{{img}}" alt="{{name}}" />
   <div class="break-player-name">{{name}}</div>
 
