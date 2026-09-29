@@ -22,6 +22,14 @@
         "type": "module",
         "compatibility": {}
       }
+    ],
+    "recommends": [
+      {
+        "id": "_chatcommands",
+        "type": "module",
+        "reason": "Adds an autocomplete menu and a command list entry for /break. Without it the command still works.",
+        "compatibility": {}
+      }
     ]
   },
   "esmodules": [

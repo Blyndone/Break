@@ -74,6 +74,14 @@ it: `/break the 3 goblins charge`.
 Players respond with the **BREAK** button on their own portrait, or the space
 bar.
 
+### Chat Commander (optional)
+
+If [Chat Commander](https://gitlab.com/woodentavern/foundryvtt-chat-command-lib)
+is installed, `/break` registers with it and gains an autocomplete menu that
+spells out the variants as you type, plus an entry in its command list. The
+module detects it at runtime — nothing to configure, and `/break` behaves
+identically without it.
+
 ### API
 
 The module also exposes an API for macros:
@@ -119,6 +127,11 @@ reaches the GM late still displaces a slower one that arrived first.
 
 - Foundry VTT **v13** (13.302 or later)
 - [socketlib](https://github.com/manuelVo/foundryvtt-socketlib)
+
+Optional:
+
+- [Chat Commander](https://gitlab.com/woodentavern/foundryvtt-chat-command-lib) —
+  autocomplete for `/break`
 
 ## 📄 License
 
